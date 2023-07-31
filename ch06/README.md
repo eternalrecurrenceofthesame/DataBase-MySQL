@@ -207,7 +207,7 @@ O - 선택 참여 최소 참여가 0 일때 표시
 ```
 ## 05 모델링 연습
 
-데이터베이스 모델링을 연습하고 ER 다이어 그램까지 작성해보기. ERD 작성 사이트https://gitmind.com/kr/erd-examples.html 
+데이터베이스 모델링을 연습하고 ER 다이어 그램까지 작성해보기. ERD 어플리케이션 다운로드 및 예제 그림 사이트 https://gitmind.com/kr/erd-examples.html 
 
 #### 1. 요구 사항 분석 및 수집 결과를 정리
 ```
@@ -232,7 +232,11 @@ O - 선택 참여 최소 참여가 0 일때 표시
 
 #### 2. ER 다이어그램 그리기 (개체)
 
+ ![entity_diagram](./entity_diagram.png) 
+
 #### 2-1. 개념적 모델링
+
+ ![conceptual_modeling](./conceptual_modeling.png) 
 
 #### 3. 논리적 모델링
 
