@@ -23,6 +23,7 @@
 ```
 * 수정 이상
 
+update 문은 조건에 맞는 값을 일괄 수정하지만, 조건을 잘못 주면 데이터의 불일치 문제가 발생한다. 
 투플 수정 시 중복된 데이터의 일부만 수정되어 데이터의 불일치 문제가 일어나는 현상이다.
 ```
 ### 이상현상의 예시 
@@ -74,4 +75,138 @@ insert into summer values(null, 'java', 25000); // 자바 생성
 
 select count(*) '수강 인원' from summer; // 전체 투플 조회는 5 개로 나오지만
 select count(sid) '수강 인원' from summer; // sid 속성 개별 조회시 4 개만 조회된다.
+select count(sid) '수강 인원' from summer where sid is not null; // 4 개
+
+delete from summer where sid is null; // 실습을 위해 투플 삭제 
+```
+#### 수정 이상
+```
+update summer set price=20000 where class like 'fortran'; // fortrn 강좌를 일괄적으로 20000 원으로 수정한다.
+
+update summer set price=15000 where class like 'fortran' and sid=100; // 특정 투플만 강좌 가격을 수정하면 전체 수정되지 않는다.
+select price 'fortran 수강료' from summer where class like 'fortran'; // 수강료 조회시 두 건의 수강료가 나옴(데이터 불일치 문제)
+
+update summer set price=20000 where class like 'fortran'; // 실습을 위해 일괄 수정 
+```
+### 이상현상 수정하기
+
+앞서 구현한 테이블을 이용해서 이상현상의 예시들을 알아보았다. 테이블 구조를 수정해서 이상현상이 발생하지 않도록 만들어 본다.
+
+```
+summer 테이블을 summerprice(수강료 정보), summerenroll(수강 신청 정보) 테이블로 분리한다. 
+
+/* 기존 테이블 삭제 */
+drop table if exists summerprice;
+drop table if exists summerenroll;
+
+/* summerprice 테이블 생성 */
+create table summerprice
+(class varchar(20),
+price integer);
+
+insert into summerprice values('fortran', 20000);
+insert into summerprice values('pascal', 15000);
+insert into summerprice values('c', 10000);
+
+select * from summerprice;
+
+/* summerenroll 테이블 생성 */
+create table summerenroll
+(sid integer,
+class varchar(20));
+
+insert into summerenroll values (100, 'fortran');
+insert into summerenroll values (150, 'pascal');
+insert into summerenroll values (200, 'c');
+insert into summerenroll values (250, 'fortran');
+
+select * from summer enroll;
+```
+```
+간단한 조회 쿼리
+
+select class from summerprice where price=(select max(price) from summerprice);
+// 수강료가 가장 비싼 과목을 구한다.
+
+select count(*), sum(price) from summerprice sp, summerenroll se where sp.class = se.class;
+// 총 학생 수 및 수강료 총 금액을 구한다.
+```
+
+#### 삭제 이상 없음
+```
+delete from summerenroll where sid=200;
+select price 'c 수강료' from summerprice where class like 'c';
+
+수강 등록 정보와, 수강료 정보를 분리했기 때문에 단순히 수강등록 정보를 삭제하더라도 수강료 정보는 삭제되지 않는다. 
+```
+#### 삽입 이상 없음
+```
+insert into summerprice values ('java',25000);
+
+수강 신청과 수강료 정보를 분리했기 때문에 null 값을 넣지 않아도 된다.
+```
+#### 수정 이상 없음
+```
+update summerprice set price=15000 where class like 'fortran';
+select price 'fortran 수강료' from summerprice where class like 'fortran';
+
+fortran 과목의 수강료는 수강료 정보에 하나만 저장되어 있기 떄문에 수정 후 데이터 불일치를 우려할 필요가 없다. 
+```
+
+# 02 함수 종속성 
+
+이상현상이 발생하는 테이블을 정상으로 되돌리는 것을 정규화라고 하며 정규화를 하기 위해서는 테이블을 분석하고 기본키와 함수 종속성을 파악해야 한다. 
+
+#### + 함수 종속성이란?
+```
+데이터베이스에서는 왼쪽 속성의 모든 값에 대하여 오른쪽 속성의 값이 유일하게 결정될 때 함수적으로 종속한다라고 한다.
+(어떤 속성 A 를 알면 다른 속성 B 의 값이 유일하게 정해지는 의존 관계)
+
+예를 들면 릴레이션 R 과 R 에 속하는 속성의 집합 X,Y 가 있을 때 X 각각의 값이 Y 의 한 개 와 대응 될 때 X 는 Y 를 함수적으로 결정한다라고
+하고 X -> Y 로 표기한다. 이때 X 를 결정자라고 하고, Y 를 종속 속성이라고 한다.
+
+함수 종속성은 보통 릴레이션 설계 때 속성의 의미로부터 정해진다.
+
+함수 종속성을 판단할 때는 릴레이션의 현재 인스턴스(데이터) 만을 갖고 판단하는 것이 아니라 속성이 갖는 의미를 가지고 판단해야 한다.
+단순히 데이터 값 X 가 Y 를 유일하게 식별할 수 있다고 해서 종속성을 가지지 않는다. 
+```
+```
+* 함수 종속성 예시
+
+학생 번호 -> 학생 이름
+학생 번호 -> 학과
+학생 번호 -> 주소
+
+학과 -> 학과 사무실
+강좌이름 -> 강의실
+
+(학생번호, 강좌이름) -> 성적 // 결정자가 복합 속성일 수도 있다.
+```
+
+### 함수 종속성 규칙과 예시 
+
+함수 종속성을 구하면 여러가지 규칙을 적용해서 종속성을 유도할 수 있다. 403 p 
+
+```
+부분집합 규칙 : if Y ⊆ X , then X -> Y 
+증가 규칙 : if X -> Y, then XZ -> YZ 
+이행 규칙 : if X -> Y, and Y-> Z,  then X -> Z 
+
+결합 규칙 : if X -> Y and X -> Z, then X -> YZ
+분해 규칙 : if X -> YZ, then  X -> Y and X -> Z
+유사이행 규칙 : if X -> Y and WY -> Z then WX -> Z
+
+구체적 예시는 교재 403 참고 
+```
+### 함수 종속성과 기본키
+```
+기본 키는 릴레이션의 모든 속성에 대해 결정자의 역할을 하기 때문에 릴레이션의 함수 종속성을 파악하기 위해서는 우선
+기본키를 찾아야 한다.
+
+K -> KABC
+```
+### 이상 현상과 결정자
+```
+이상 현상은 한 개의 릴레이션에 두 개 이상의 릴레이션 정보가 포함되어 있을 때 나타난다.
+
 ```
