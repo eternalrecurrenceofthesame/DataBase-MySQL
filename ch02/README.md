@@ -136,6 +136,19 @@ ex) 유일하게 식별할 수 있는 주민번호와 고객 번호로 슈퍼키
 - 최대한 적은 수의 속성을 가져야 한다.
 - 향후 키를 사용하는 데 있어서 문제 발생 소지가 없어야 한다.
 (예를 들면 주민번호를 기본 키로 사용했는데 개인정보 보호 정책에 의해 사용할 수 없게되면 안 된다. 보통 인위적인 키를 기본 키로 사용한다.)
+
+
+참고로 기본키를 구성하는 칼럼은 복수로 구성할 수 있지만, 기본키를 복수로 만들 수는 없다.
+https://hoon93.tistory.com/57 참고 
+
+create table tb_product_category_group(
+product_group_cd char(4),
+product_category_cd char(4),
+product_category_nm varchar(100) not null,
+product_categroy_desc varchar(1000),
+use_yn char(1) not null,
+constraint tb_product_category_group_pk primary key(product_group_cd , product_category_cd))tb_product_category_group
+// 제약 조건으로 2 개의 속성을 가진 하나의 기본키를 만듦
 ```
 ```
 4. 대리키
