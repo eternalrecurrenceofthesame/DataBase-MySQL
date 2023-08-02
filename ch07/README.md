@@ -221,6 +221,9 @@ K -> KABC
 부분 릴레이션 내에서 기본키가 아닌 속성이 결정자 역할을 할 수도 있으므로 부분 릴레이션 내에서도 정규화를 진행한다.
 ```
 #### + 이상현상 테이블을 정규화 한 예시 
+
+ ![nomorization_ex.png](./normalization_ex.png) 
+
 ```
 * 함수 종속성 
 학생 번호 -> 학생 이름
@@ -232,3 +235,74 @@ K -> KABC
 
 (학생번호, 강좌이름) -> 성적 // 결정자가 복합 속성일 수도 있다.
 ```
+# 03 정규화
+
+이상 현상의 원인은 여러 가지가 있지만 대부분 두 가지 이상의 정보가 한 릴레이션에 저장되어 있기 때문에 발생한다.
+
+이상현상이 발생하면 기본키와 함수 종속성을 이용해서 이상현상이 없어질 때까지 분해한다. 이것을 정규화 라고 한다.
+
+## 정규화 과정
+
+함수 종속성의 유형에 따라 정규형 등급을 나눌 수 있다. 정규형이 높을 수록 이상현상은 줄어든다.
+
+### 제 1 정규형
+```
+A relation in which the intersection of each row(tuple) and column contains one and only one value.
+제 1 정규형은 릴레이션의 속성 값이 원자값이어야 한다는 조건이다.
+```
+![normalization_ex.png](normalization_ex.png)
+
+### 제 2 정규형
+```
+A relation that is in first normal form(제 1 정규형) and every non-primary key attribute is fully functionally depedent on the primary key.
+릴레이션 R 이 제 1 정규형이고 기본키가 아닌 속성이 기본키에 완전 함수 종속일 때 제 2 정규형이라고 한다.
+```
+#### + 완전 함수 종속이란? 
+```
+A(후보키 또는 복합키가 되는 속성) -> B 의 함수 종속성이 성립할 때 B 가 A 의 속성 전체에 함수 종속하고 B 가 부분 집합 속성 A (a1, a2)에
+함수 종속하지 않을 경우 완전 함수 종속이라고 한다.
+
+반면, A(후보키 또는 복합키가 되는 속성) -> B 종속성에서 A 의 속성 일부를 제거해도 종속성이 여전히 성립한다면 불완전 함수 종속이라고 한다.
+```
+![normalization2_ex.png](normalization2_ex.png)
+```
+제 2 정규 형으로 변환하기 전에는 기본키로 (학생번호, 강좌이름) 을 사용하는데 강좌이름만으로도 강의실 속성을 종속할 수 있기 때문에
+불완전 함수 종속이다. 강좌 이름, 강의실 속성을 릴레이션에서 분리하면 제 2 정규형으로 만들 수 있다. 
+```
+### 제 3 정규형
+```
+A relation(테이블, 릴레이션) that is in first and second normal form (제 2 정규형) and in which no non-primary key is transitively dependent on
+the primary key
+
+제 2 정규형이면서 기본키가 아닌 속성이 기본키에 비 이행적으로(분리되어서) 종속될 때 이를 제 3 정규형이라고 한다.
+A(후보키 또는 복합키가 되는 속성) -> B , B -> C 가 성립할 때 A -> C 가 성립되는 함수 종속성을 말한다.
+
+이때 A B C 속성이 합쳐진 릴레이션은 제 3 정규형 오류이며 A -> B / B -> C 로 릴레이션을 분리하고 논리적(비이행적) 으로 A -> C 가 성립되도록 구현해야 한다.
+(기본키가 아닌 강좌 이름에 일반 속성이 한번 더 종속될 수 있기 때문이다.)
+```
+![normalization3_ex.png](normalization3_ex.png)
+
+### BCNF
+```
+A relation is in BCNF if and only if every determinant is a candiate key.
+릴레이션에 존재하는 함수 종속성에서 모든 결정자가 후보키인 릴레이션은 BCNF 정규형이다. 
+```
+```
+(학생번호, 특강이름) 은 오류 릴레이션의 기본키(후보키) 이며 결정자이다. 이 오류 릴레이션에서는 결정자이면서 후보키가 아닌
+교수(교수를 알면 특강 이름을 알 수 있다) 속성이 존재하기 때문에 이상현상이 발생하고 있다. 
+
+그렇기 때문에 결정자를 후보키로 만드는 BCNF 정규형으로 변환해야 한다.
+```
+![BCNF_ex.png](BCNF_ex.png)
+
+## 무손실 분해
+
+정규화를 통해 릴레이션을 분리할 때는 지켜야할 규칙이 있다. 분해된 릴레이션간의 관계(relationship) 를 유지하기 위해 분해된 릴레이션은 공통 속성을 한 개 이상 두어야 한다.
+
+공통 속성은 분해된 릴레이션을 하나로 조인할 때 사용된다.
+
+```
+릴레이션 R 을 분리해서 R1, R2 로 만들고 다시 조인했을 때 기존의 릴레이션을 만들 수 있어야 한다. 무손실 분해의 조건은
+분해할 때 공통된 속성이 릴레이션 R1 의 키이거나 R2 의 키여야 한다는 것이다.
+```
+![lossless-join-decomposition.png](lossless-join-decomposition.png)
