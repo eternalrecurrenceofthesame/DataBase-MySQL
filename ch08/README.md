@@ -28,7 +28,7 @@ DBMS 는 부분완료까지 작업을 수행한 후 사용자에게 완료 사�
 
 트랜잭션에 포함된 작업은 전부 수행되거나 아니면 전부 수행되지 않아야 한다.
 
-MySQL 에서는 트랜잭션 제어 명령어를 사용해서 트랜잭션을 수동으로 시작하거나 또는 데이터를 변경하는 SQL 문이 나오면 자동으로
+MySQL 에서는 트랜잭션 제어 커맨드를 사용해서 트랜잭션을 수동으로 시작하거나 또는 데이터를 변경하는 SQL 문이 나오면 자동으로
 트랜잭션이 시작된다.
 
 트랜잭션 종료는 직접 COMMIT 또는 ROLLBACK 문을 사용하거나 후자의 경우 DDL 문을 만날 때 자동으로 종료된다.
@@ -37,6 +37,20 @@ SAVE 문을 사용해서 세이브 포인트를 만들 수도 있다. 트랜잭�
 다시 수행한다.
 
 START TRANSACTION - COMMIT, ROLLBACK, ROLLBACK TO, SAVE 442 p
+```
+```
+* 트랜잭션 커맨드 예시 
+
+start transaction;
+insert into book balues (99, '데이터베이스', '한빛', 25000);
+
+select bookname 'bookname1' from book
+where bookid = 99;
+savepoint a;
+...
+rollback to a; // rollback 만 사용하면 데이터가 전부 롤백된다. 
+
+commit;
 ```
 ```
 * 일관성 Consistency
