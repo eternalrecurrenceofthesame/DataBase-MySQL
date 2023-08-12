@@ -121,9 +121,9 @@ select c.name, o.saleprice from customer c left outer join orders o on c.custid=
 않고 연관된 컬럼의 메타 데이터를 통해서 필요한 값을 조회한다. 
 
 부속 질의로 반환되는 테이블은 단일행열(1*1), 다중행 단일열(n*1), 단일행 다중열(1*n), 다중행열(n*n)이 있다.
-부속 질의의 결과 여러 개의 값을 반환하는 다중행 단일열은 in 키워드를 사용한다.
+부속 질의의 결과 여러 개의 값을 반환하는 다중행 단일열은 in 키워드를 사용한다. ? 173 p 
 
-select bookname from book where price=(select max(price) from book); // 기본 부속 질의 예시 
+select bookname from book where price=(select max(price) from book); // 기본 부속 질의 예시 (1*1) 단일행열 최댓값
 ```
 ```
 * 상위 부속 질의
@@ -144,28 +144,124 @@ select name from customer where custid in (select custid from orders where booki
 출판사 별로 출판사의 평균 도서 가격보다 비싼 도서를 구하기 book 테이블 내부에서 서로 관련을 맺는다(내부 조인과 비슷)
 
 select b1.bookname from book b1 where b1.price > (select avg(b2.price) from book b2 where b2.publisher=b1.publisher);
+// 상관 부속 질의 에서는 다중행 단일열의 경우 in 절을 안써도 되는듯? 
 ```
 ### 집합 연산
 ```
-집합 연산은 테이블 간의 집합을 구하는 연산 합집합(union), 차집합(not in), 교집합(in) 을 구할 수 있다. 참고로 MySQL 은
-minus, intersect 집합 연산이 없다.
+집합 연산은 테이블 간의 집합을 구하는 연산 합집합(union), 차집합(not in), 교집합(in) 을 구할 수 있다.
+참고로 MySQL 은 minus, intersect 집합 연산이 없다.
 
-참고로 교집합 in 은 조인을 사용해서 풀 수도 있지만 요구 사항이 교집합을 구하는 것이라면 in 부속질의를 이용한 교집합 방식을
-사용한다.
+교집합 in 은 조인을 사용해서 풀 수도 있지만 요구 사항이 교집합을 구하는 것이라면 in 부속질의를 이용한 교집합 방식을 사용한다.
 ```
 ```
 * 합집합 구하기 (union [중복 제거], union all[중복 포함])
 
+대한민국에 거주하는 고객의 이름과 도서를 주문한 고객의 이름
+
 select name from customer where address like '대한민국%'
 union
 select name from customer where custid in (select custid from orders); // 교집합 사용
+```
+#### + MySQL 에서 차집합(minus), 교집합(intersect) 사용하기
+```
+* not in 으로 차집합 구하기
 
-대한민국에 거주하는 고객의 이름과 도서를 주문한 고객의 이름
+대한민국에서 거주하는 고객의 이름에서 도서를 주문한 고객의 이름만 빼고 조회하기
+
+select name from customer where address like '대한민국%' and name not in
+(select name from customer where custid in(select custid from orders)); // 상관 부속 질의는 하위 부속 질의부터 계산한다.
+```
+```
+* in 으로 교집합 구하기
+
+대한민국에 거주하는 고객 중 도서를 주문한 고객의 이름을 보이시오 
+
+select name from customer where address like '대한민국%' and name in
+(select name from customer where custid in (select custid from orders));
 ```
 
+### exists 존재 여부 알아보기
 
+exists 는 상관 부속 질의문 형식으로 사용한다. (상위 부속질의를 사용해서 하위 부속질의를 구한다.) 
 
+```
+주문이 있는(exists) 고객의 이름과 주소를 보이시오
 
+select nane, address from customer cs where exists(select*from orders od where cs.custid=od.custid);
+// 먼저 고객을 조회하고 주문이 있는 고객이 존재하는지 참 거짓을 판단한 후 참인 값을 출력한다.
+```
+## 데이터 정의어 (DDL - Data Definition Language)
 
+### create 문
 
+#### + 문자형 데이터 타입 - char, varchar
+```
+char 는 n 바이트를 가진 문자형 타입으로 저장되는 문자의 길이가 n 바이트보다 작으면 나머지는 공백으로 채우며
+varchar 는 저장되는 문자의 길이 만큼 가변되는 타입이다,
+
+즉 char 와 varchar 의 데이터가 같다고 해도 char 는 공백을 채운 문자열이기 때문에 동등 비교시 실패할 수 있다. 
+```
+```
+* create 예시
+
+create table newbook(
+bookname varchar(20) not null,
+publisher varchar(20) unique,
+price integer default 10000 check(price>=1000),
+primary key(bookname, publisher));
+
+create table newcustomer (
+custid integer primary key,
+name varchar(40),
+address varchar(40),
+phone varchar(30));
+
+create table neworders(
+orderid integer,
+custid integer not null,
+bookid integer not null,
+saleprice integer,
+orderdate date,
+primary key(orderid),
+foreign key(custid) references newcustomer(custid) on delete cascade);
+```
+#### + 외래키 제약 조건을 명시할 때 주의할 점
+```
+참조되는 부모 테이블이 있어야 하며 부모 테이블의 기본키 값을 외래키로 참조해야 한다. 외래키 지정시 ON DELETE 옵션으로
+참조되는 부모 테이블의 투플이 삭제될 때의 액션을 지정할 수 있다.
+
+no action - 설정의 기본 값으로 어떠한 동작도 취하지 않는다.
+on delete restrict - 자식 릴레이션이 참조하고 있을 경우 부모 릴레이션의 작업 거부 
+on delete cascade -자식 릴레이션의 투플도 같이 삭제
+on delete set null - NULL 을 허가한 경우 NULL 값으로 변경
+
+참고로 참조되는 부모 테이블 생성시 속성에 default 값을 설정하면 default 값으로 변경된다. 
+```
+#### + 데이터 타입의 종류
+
+```
+integer/int - 4 바이트 정수형을 저장한다.
+numeric(m,d)/decimal(m,d) - 전체 자릿수 m, 소수점이하 자릿수 d 를 가진 숫자형 저장
+char(n) - 문자형 고정 길이 남은 공간은 공백 
+varchar(n) - 문자형 가변 길이
+date - 날짜형 연도,월,날,시간을 저장
+
+그외 자료형 MySQL 래퍼런스를 참고 
+```
+### Alter - 테이블의 속성 및 제약 조건 변경
+```
+alter table newbook add isbn varchar(13);
+alter table newbook modify isbn integer;
+
+alter table newbook drop column isbn;
+alter table newbook modify bookid integer not null;
+
+alter table newbook add primary key(bookid)
+```
+### DROP - 테이블 삭제
+```
+drop table newbook;
+
+삭제하려는 테이블의 기본키를 다른 테이블에서 참조하고 있을 때 삭제가 거부된다. 참조하는 테이블부터 삭제한다.
+```
 
