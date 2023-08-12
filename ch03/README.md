@@ -264,4 +264,50 @@ drop table newbook;
 
 삭제하려는 테이블의 기본키를 다른 테이블에서 참조하고 있을 때 삭제가 거부된다. 참조하는 테이블부터 삭제한다.
 ```
+## 데이터 조작어 - 삽입, 수정 삭제
 
+### insert
+```
+insert into book(bookid, bookname, publisher, price) values(11, '스포츠 의학', '한솔의학서적', 90000);
+// 속성을 입력하지 않으면 속성 순서대로 값을 입력해야 한다. 속성 순서를 바꿔서 입력할 수도 있다.
+
+모든 속성을 전부 입력하지 않아도 된다. 특정 속성만 선택해서 입력할 경우 데이터가 없는 속성은 null 값으로 저장된다.
+```
+#### + bulk insert
+```
+select 를 사용해서 같은 타입을 가진 테이블의 데이터 값을 대량으로 insert 할 수도 있다.
+
+imported_book 테이블의 데이터를 book 테이블에 모두 insert 하기
+
+insert into book(bookid, bookname, price, publisher) select bookid, bookname, price, publisher
+from imported_book;
+```
+### update (특정 속성 값을 수정하는 명령)
+```
+book 의 14 번 출판사를 imported_book 21 번 출판사로 변경하기
+update book set publisher=(select publisher from imported_book where bookid ='21') where bookid='14';
+```
+#### + safe updates 모드와 update 시 주의사항
+```
+workbench 는 update 나 delete 중 실수 하는 것을 방지하기 위해 기본키 속성을 사용해서만 가능하도록 안전 옵션을
+디폴트 값으로 둔다. 
+
+update customer set address='대한민국 부산' where custid=5; // 이런식으로 기본키를 사용한다.
+
+edit - preferences 에서 safe updates 를 체크 해제하면 set sql_safe_updates=0; 커맨드를 사용하지 않고
+update, delete 할 수 있다.
+```
+```
+* update 시 주의할 점
+
+safe update 를 해제하고 update customer set address='대한민국 서울'; 이렇게 해버리면 bulk update 가 되어 버린다.
+특정 고객의 값을 수정하려고 했다가 모든 값이 벌크로 수정될 수 있으니 update 를 할 때는 항상 주의해야 한다. 
+```
+### delete 문
+```
+delete from book where bookid='11';
+
+delete 또한 마찬가지로 특정 투플을 지정하지 않으면 테이블 데이터가 전체 삭제되기 때문에 주의해야 한다.
+
+참고로 drop 을 사용하면 테이블 자체를 삭제해버린다.
+```
