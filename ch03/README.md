@@ -151,7 +151,6 @@ select name from customer where custid in (select custid from orders where booki
 출판사 별로 출판사의 평균 도서 가격보다 비싼 도서를 구하기 book 테이블 내부에서 서로 관련을 맺는다(내부 조인과 비슷)
 
 select b1.bookname from book b1 where b1.price > (select avg(b2.price) from book b2 where b2.publisher=b1.publisher);
-// 상관 부속 질의 에서는 다중행 단일열의 경우 in 절을 안써도 되는듯? 
 ```
 ### 집합 연산
 ```
@@ -194,7 +193,7 @@ exists 는 상관 부속 질의문 형식으로 사용한다. (상위 부속질�
 ```
 주문이 있는(exists) 고객의 이름과 주소를 보이시오
 
-select nane, address from customer cs where exists(select*from orders od where cs.custid=od.custid);
+select name, address from customer cs where exists(select*from orders od where cs.custid=od.custid);
 // 먼저 고객을 조회하고 주문이 있는 고객이 존재하는지 참 거짓을 판단한 후 참인 값을 출력한다.
 ```
 ## 데이터 정의어 (DDL - Data Definition Language)
