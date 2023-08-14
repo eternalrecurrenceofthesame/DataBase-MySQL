@@ -1,4 +1,4 @@
-# SQL 기초 
+# 1. SQL 기초 
 ```
 DDL: CREATE, ALTER, DROP 테이블이나 관계 구조를 생성한다
 DML: SELECT, INSERT, DELETE, UDPATE 등 검색, 삽입, 수정 삭제 하는 데 사용한다.
@@ -316,4 +316,99 @@ delete from book where bookid='11';
 delete 또한 마찬가지로 특정 투플을 지정하지 않으면 테이블 데이터가 전체 삭제되기 때문에 주의해야 한다.
 
 참고로 drop 을 사용하면 테이블 자체를 삭제해버린다.
+```
+
+# 2. SQL 고급 
+
+## 내장 함수 
+
+수학의 함수 y=f(x) 를 SQL 문으로 사용할 수 있다. SQL 에서 함수는 DBMS 가 제공하는 내장 함수와 사용자가 필요에 따라 직접 만드는 사용자 정의 함수 두 개가 있다.
+
+```
+실습에서 사용하는 함수 외의 MySQL 에서 제공하는 내장 함수는 아래 래퍼런스를 참고한다.
+dev.mysql.com/doc/refman/8.0/en/functions.html
+```
+### 숫자 함수
+```
+* 숫자 함수의 종류
+
+abs(숫자) // 절댓값
+ceil(숫자) // 숫자보다 크거나 같은 최소의 정수 ceil(4.1) -> 5
+floor(숫자) // 숫자보다 작거나 같은 최소 정수 floor(4.1) -> 4
+round(숫자,m) // 숫자의 반올림 round(5.36, 1) -> 5.40
+power(숫자,n) // 숫자의 n제곱 값을 계산 power(2,3) -> 8
+sign(숫자) // 숫자가 음수면 -1, 0 이면 0, 양수면 1
+```
+#### + from 절이 없는 select 문
+```
+데이터베이스에 따라 다르지만 mysql 은 from 이 없어도 select 를 사용할 수 있다. 그러나 오라클에서는
+from 절이 필수이기 때문에 일시적인 연산을 위해 dual 이라는 가상 테이블을 사용한다.
+```
+```
+* 숫자 함수 연습
+
+select abs(-78), abs(+78); // abs 는 절댓값을 구하는 함수
+select round(4.875,1); // round 는 반올림 함수 여기서는 소수 첫째 자리까지 반올림한다.
+
+고객별 평균 주문 금액을 백원 단위로 반올림한 값을 구하기
+select custid'고객번호', round(sum(saleprice)/count(*), -2)'평균금액' from orders group by custid;
+```
+### 문자 함수 
+
+문자 함수는 주로 char, varchar 의 데이터를 대상으로 문자를 가공한 결과를 반환한다.
+
+```
+* 문자 함수의 종류
+
+concat(s1,s2) // 두 문자열을 연결 concat('마당', '서점') -> '마당 서점'
+lower(s) // 소문자로 변환
+lapd(s,n,c) // 왼쪽부터 지정한 자릿수까지 지정한 문자로 채운다. lapd('page 1',10,'*') -> '****page 1'
+rpad(s,n,c) // 오른쪽부터 지정한 자릿수까지 지정한 문자로 채운다. rapd('abc', 5, '*') -> 'abc**'
+
+replace(s1,s2,s3) // 대상 문자열의 지정한 문자를 원하는 문자로 변경 replace('jack & jue', 'j', 'bl') -> 'black & blue'
+
+substr(s,n,k) // 대상 문자열의 지정된 자리에서부터 지정된 길이만큼 잘라서 반환 substr('abcdefg',3,4) -> 'cdef'
+trim(c from s) // 양쪽에서 지정된 문자를 삭제한다 문자열만 넣으면 공백을 제거한다 trim('=' '==browning==') -> 'browning'
+
+upper(s) // 문자열을 대문자로 변환
+
+length(s) // 대상 문자열의 byte 를 반환 한글은 utf-8 에서 글자당 3 byte 이다
+char_length(s) // 문자열의 문자 수를 반환 (바이트가 아닌 문자의 수)
+```
+```
+* 문자 함수 연습
+
+도서 제목에 야구가 포함된 도서를 농구로 변경한 후 도서 목록을 보이시오. (속성을 지정해서 변경)
+select bookid, replace(bookname, '야구', '농구') bookname, publisher, price from book;
+
+굿스포츠에서 출판한 도서의 제목과 제목의 문자 수, 바이트 수를 보이시오
+select bookname, char_length(bookname) '문자수', length(bookname) '바이트수' from book where publisher='굿스포츠';
+
+마당 서점의 고객 중 같은 성을 가진 사람이 몇 명이나 되는지 성별 인원수를 구하시오
+select substr(name, 1,1) '성', count(*)'인원' from customer group by substr(name,1,1);
+```
+### 날짜 시간 함수
+
+날짜를 단순 문자열이 아닌 날짜형 데이터로 저장하고 관리하면 날짜 연산을 쉽게 처리할 수 있다.
+```
+* 날짜 시간 함수 종류
+
+str_to_date(string,format) //str_to_date('2019-02-14', '%Y-%m-%d') -> 2019-02-14 문자를 date 자료형으로 반환
+date_format(date,format) // date_format('2019-02-14', '%Y-%m-%d') -> '2019-02-14' 날짜형 date 을 문자열varchar 로 반환
+
+adddate(date,interval) // adddate('2019-02-14', interval 10 day) -> 2019-02-24
+date(date) // date('2003-12-31 01:02:03'); -> 2003-12-31 문자열의 날짜 부분을 date 로 반환
+
+datediff(date1,date2) // datediff('2019-02-14', '2019-02-04') -> 10 날짜의 차이를 반환 d1-d2
+sysdate // sysdate() 시스템상의 오늘 날짜를 반환 
+```
+```
+* 날짜 시간 함수 연습
+
+마당서점은 주문일로부터 10일 후 매출을 확정한다. 각 주문의 확정일자를 구하시오
+select orderid'주문번호', orderdate'주문일', adddate(orderdate, interval 10 day) '확정일' from orders;
+```
+#### + date_format 을 지정해서 사용하기
+```
+
 ```
