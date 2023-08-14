@@ -400,7 +400,10 @@ adddate(date,interval) // adddate('2019-02-14', interval 10 day) -> 2019-02-24
 date(date) // date('2003-12-31 01:02:03'); -> 2003-12-31 문자열의 날짜 부분을 date 로 반환
 
 datediff(date1,date2) // datediff('2019-02-14', '2019-02-04') -> 10 날짜의 차이를 반환 d1-d2
-sysdate // sysdate() 시스템상의 오늘 날짜를 반환 
+sysdate // sysdate() 시스템상의 오늘 날짜를 반환
+
+
+참고로 날짜 변수 입력시 - 를 생략하고 연결해서 작성해도 된다. ( - 를 포함하면 - 를 포함한 데이트를 반환함 / 같은 다른 거로 구분해도 된다.)
 ```
 ```
 * 날짜 시간 함수 연습
@@ -409,6 +412,73 @@ sysdate // sysdate() 시스템상의 오늘 날짜를 반환
 select orderid'주문번호', orderdate'주문일', adddate(orderdate, interval 10 day) '확정일' from orders;
 ```
 #### + date_format 을 지정해서 사용하기
-```
+
+앞서 설명했듯 date_format 은 varchar 를 date 타입으로 변경시켜준다. format 의 주요 지정자를 알아보고 간단한 실습을 해본다.
 
 ```
+* format 주요 지정자
+
+%w // 요일 순서(0~6, sunday=0)
+%W // 요일(sunday_saturday)
+%a // 요일의 약자(sun~sat)
+%d // 1 달 중 날짜 (00~31)
+%j // 1 년 중 날짜(001~336)
+%h // 12 시간 (01~12)
+%H // 24 시간 (00~23)
+%i // 분(0~59)
+%m // 월 순서 (0~12, january=01)
+%b // 월 이름 약어(jan~dec)
+%M // 월 이름(january~december)
+%s // 초(0~59)
+%Y // 4 자리 연도
+%y // 4 자리 연도의 마지막 2 자리
+
+모든 포맷터 지정자를 다 사용해보면 이런식으로 나온다.
+
+select sysdate(), date_format(sysdate(), '%w/%W/%a/%d/%j/%h/%H/%i/%m/%b/%M/%s/%Y/%y');
+'2023-08-15 05:53:47', '2/Tuesday/Tue/15/227/05/05/53/08/Aug/August/47/2023/23'
+
+참고로 포맷시 지정자, 포맷 형식이 일치하지 않으면 값이 출력되지 않는다. 
+```
+```
+2014 7 7 에 주문받은 도서의 주문번호, 주문일, 고객 번호, 도서 번호를 모두 보이시오 
+select orderid , str_to_date(orderdate, '%Y-%m-%d'), custid, bookid from orders where orderdate=date_format('20140707','%Y%m%d');
+
+date_format 으로 varcahr 를 date 로 변경하고 str_to_date 를 적용한다 이렇게 하는 이유는 str_to_date 로 varchar 를 date 로 바꾸고 date 의
+기본 포맷인 %Y-%m-%d 에 맞춰서 값을 select 해오기 위함인 거 같다.
+
+
+dbms 서버에 설정된 날짜 시간 요일 확인 해보기
+select sysdate(), date_format(sysdate(), '%Y/%m%d%M%h:%s') 'sysdate_1';
+```
+### NULL 값 처리하기
+
+null 은 0 이나 빈 문자 공백 등과 다른 특별한 값으로써 아직 지정되지 않은 값을 의미한다. 또한 null 값은 비교 연산이 불가능하며, 숫자 연산을 수행하면 null 값이 반환된다.
+
+```
+* null 값에 대한 연산과 집계 함수의 결과
+
+null + 숫자 = null
+
+집계함수를 사용했을 때 null 이 있으면 집계에서 제외된다. sum, avg 함수는 해당하는 행이 하나도 없을 경우 null 을 반환하며
+null 값은 계산할 때 포함하지 않는다.
+
+select*from mybook where price is null; // 가격이 null 인 투플 조회
+select name '이름', ifnull(phone, '연락처없음') '전화번호' from customer; // ifnull 을 사용하면 null 값을 임의의 값으로 변경할 수 있다
+```
+### 행 번호 출력하기
+
+@seq:=0; 을 변수로 받아서 행 번호를 출력할 수 있다.
+
+```
+순번을 설정하고 앞 순번 두 명만 출력한다. 
+
+set @seq:=0;  
+select (@seq:=@seq+1)'순번', custid, name, phone from customer where @seq < 2;
+```
+## 부속질의 (심화)
+
+앞서 ㅅ
+
+
+
