@@ -60,7 +60,7 @@ select*from book order by price desc, publisher asc; // 가격이 같으면 출�
 ```
 ## 집계 함수와 group by 
 
-group by 로 데이터를 집계한 후 구체적인 집계 내용은 집계 함수를 사용한다. (집계함수를 select 에서 사용하려면 group by 를 써야 한다.)
+group by 로 데이터를 집계한 후 구체적인 집계 내용은 집계 함수를 사용한다. (집계함수를 select 에서 사용하면서 값을 조회하려면 group by 를 써야 한다.)
 
 #### 집계 함수의 종류
 ```
@@ -496,6 +496,51 @@ select (@seq:=@seq+1)'순번', custid, name, phone from customer where @seq < 2;
 고객별 판매액을 보이시오(고객 이름과 고객별 판매액 출력)
 select (select name from customer cs where cs.custid=od.custid)'name', sum(saleprice)'total' from orders od group by od.custid;
 
+
+스칼라 부속 질의는 주질의 테이블에서 필요한 데이터를 가져온 후 부속질의의 데이터를 기준으로 최종 결과를 출력한다. 227p
+
 customer 테이블의 custid 는 기본키이므로 customer 테이블에서 유일한 값이다. custid 를 기준으로 결과를 가져오는 부속 질의는
 단일 행을 반환한다. 부속 질의의 select 문에는 오직 name 열만 표시되어 있으므로 이 부속 질의는 단일 행, 열만 출력한다.
+
+alter table orders add bname varchar(40); // 실습용 쿼리 추가
+update orders set bname='피겨 교본' where bookid=1; // bookid 1 의 null 값 업데이트
 ```
+```
+* 스칼라 부속질의를 이용해서 null 값 update 를 일괄적으로 처리하기
+
+update orders set bname=(select bookname from book where book.bookid=orders.bookid);
+```
+### 인라인 뷰 (from 부속 질의)
+```
+from 절에는 테이블을 지정하는데 테이블 대신 인라인 뷰 부속질의를 사용해서 일시적으로 만들어진 가상의 뷰 테이블을 사용할 수 있다.
+부속질의 결과 반환되는 데이터는 다중 행, 다중 열이어도 상관없다.
+
+다만 주 질의의 특정 컬럼 값을 부속 질의가 상속받아서 사용하는 상관 부속 질의는 사용할 수 없다.
+```
+```
+고객 번호가 2 이하인 고객의 판매액을 보이시오(고객 이름과 고객별 판매 액을 출력한다.)
+select cs.name, sum(od.saleprice) from (select custid, name from customer where custid <=2) cs, orders od where cs.custid=od.custid group by cs.name;
+
+cs 뷰 테이블을 만들고 필터링 된 값을 orders 테이블과 조인한다. 조인으로 이 문제를 해결할 수도 있지만 조인 결과 테이블에서
+필요없는 데이터를 제거해야 하므로 성능 저하가 발생할 수 있다.
+```
+### 중첩 질의 (where 부속 질의)
+```
+중첩 질의는 주 질의의 자료 집합에서 한 행씩 가져와 부속 질의를 수행한다. 연산 결과에 따라 where 절의 조건이 참인지 거짓인지
+판단해서 참일 경우 주질의의 해당 행을 출력한다.
+```
+```
+* 비교 연산자
+
+평균 주문 금액 이하의 주문에 대해서 주문 번호와 금액을 보이시오
+select orderid, saleprice from orders where saleprice <=(select avg(saleprice) from orders); // 상위 부속 질의
+
+각 고객의 평균 주문 금액보다 큰 금액의 주문 내역에 대해 주문번호, 고객번호, 금액을 보이시오
+select orderid, custid, saleprice from orders md where saleprice > (select avg(saleprice) from orders so where md.custid=so.custid); // 상관 부속 질의
+```
+```
+* in, not in
+
+
+```
+
